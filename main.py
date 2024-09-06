@@ -11,6 +11,7 @@ THRESHOLD = 50  # Threshold for win condition
 
 class PuzzleGame:
     def __init__(self, root):
+        self.image = None
         self.root = root
         self.root.title("Image Puzzle Game")
         self.canvas = tk.Canvas(root, width=GRID_SIZE * PIECE_SIZE, height=GRID_SIZE * PIECE_SIZE)
@@ -23,6 +24,8 @@ class PuzzleGame:
         self.load_button = tk.Button(root, text="Upload Image", command=self.upload_image)
         self.load_button.pack(pady=20)
         self.valid_positions = self.create_valid_positions()
+        self.piece_size = (PIECE_SIZE, PIECE_SIZE)
+        self.outline = None
         self.is_winning = False
 
     def create_valid_positions(self):
@@ -41,7 +44,7 @@ class PuzzleGame:
 
         # Load the image using Tkinter's PhotoImage
         original_image = tk.PhotoImage(file=file_path)
-
+        self.image = original_image
         # Resize the image while maintaining the aspect ratio
         scale_factor = min(max_width / original_image.width(), max_height / original_image.height())
         new_width = int(original_image.width() * scale_factor)
@@ -76,6 +79,7 @@ class PuzzleGame:
         self.pieces = []
         piece_width = self.image.width() // GRID_SIZE
         piece_height = self.image.height() // GRID_SIZE
+        self.piece_size = (piece_width, piece_height)
         for row in range(GRID_SIZE):
             for col in range(GRID_SIZE):
                 # Create each piece as a new PhotoImage by subsampling the image
@@ -108,6 +112,7 @@ class PuzzleGame:
     def draw_pieces(self):
         if self.is_winning:
             self.canvas.delete("all")
+            self.canvas.create_image(0, 0, anchor='nw', image=self.image, tags="image")
             self.canvas.create_text(300, 300, text="You Win!", font=("Helvetica", 100), fill="green")
             return
         # Draw the pieces on the canvas
@@ -117,20 +122,31 @@ class PuzzleGame:
             x, y = self.current_positions[piece]
             item_id = self.canvas.create_image(x, y, anchor='nw', image=piece, tags="piece")
             self.canvas_items[item_id] = piece
+        if self.selected_piece:
+            x, y = self.current_positions[self.selected_piece]
+            print(x, y)
+            outline = self.canvas.create_rectangle(x, y, x + self.piece_size[0], y + self.piece_size[1],
+                                                   outline="yellow", width=3, tags="outline")
+            self.canvas.tag_raise(outline)
         self.canvas.tag_bind("piece", "<Button-1>", self.on_piece_click)
         self.canvas.tag_bind("piece", "<B1-Motion>", self.on_piece_drag)
         self.canvas.tag_bind("piece", "<ButtonRelease-1>", self.on_piece_release)
 
     def on_piece_click(self, event):
         # Find the piece under the click
-        piece = self.canvas.find_closest(event.x, event.y)
-        self.selected_piece = piece[0]
+        piece = self.canvas.find_closest(event.x, event.y)[0]
+        x, y = event.x, event.y
+        self.outline = self.canvas.create_rectangle(x, y, x + self.piece_size[0], y + self.piece_size[1],
+                                                   outline="yellow", width=3, tags="outline")
+        self.selected_piece = piece
         self.canvas.tag_raise(self.selected_piece)
 
     def on_piece_drag(self, event):
         # Move the selected piece with the mouse
         if self.selected_piece:
             self.canvas.coords(self.selected_piece, event.x, event.y)
+            self.canvas.coords(self.outline, event.x, event.y,
+                               event.x + self.piece_size[0], event.y + self.piece_size[1])
 
     def on_piece_release(self, event):
         # Release the piece and snap it to the nearest valid position
@@ -161,4 +177,3 @@ class PuzzleGame:
 root = tk.Tk()
 game = PuzzleGame(root)
 root.mainloop()
-#hello! how R U?
