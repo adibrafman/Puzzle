@@ -58,7 +58,7 @@ class PuzzleGame:
                                 0, 0, original_image.width(), original_image.height(),
                                 '-to', 0, 0)
         # Update the canvas size to match the resized image
-        self.canvas.config(width=new_width, height=new_height)
+        self.canvas.config(width=new_width+100, height=new_height+100)
         self.image = self.crop_image(resized_image, new_width, new_height)
         self.split_image()
         self.shuffle_pieces()
@@ -135,7 +135,7 @@ class PuzzleGame:
     def on_piece_click(self, event):
         # Find the piece under the click
         piece = self.canvas.find_closest(event.x, event.y)[0]
-        x, y = event.x, event.y
+        x, y = self.canvas.coords(piece)
         self.outline = self.canvas.create_rectangle(x, y, x + self.piece_size[0], y + self.piece_size[1],
                                                    outline="yellow", width=3, tags="outline")
         self.selected_piece = piece
